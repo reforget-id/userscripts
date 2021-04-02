@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Twitter Video Fix 
-// @version     1.0.0
+// @version     1.1.0
 // @author      reforget-id
 // @namespace   twitter-video-fix
 // @description Fix video playback in twitter
@@ -26,7 +26,7 @@
     const resource = "https://www.savetweetvid.com/result?url="
     const tweet = /mobile.twitter.com\/.+\/status\/.+/
     const log = '[Twitter Video Fix]'
-    let article, videoContainer, embedVideo, downloadUrl, oldHref 
+    let article, videoContainer, embeddedVideo, downloadUrl, oldHref 
     
     const config = {childList: true}
     const target = document.head
@@ -39,13 +39,13 @@
                 oldHref = currentHref
                 article = null
                 videoContainer = null
-                embedVideo = null
+                embeddedVideo = null
                 downloadUrl = null
                 console.log(log, 'Clear Variable')
                 
                 if (currentHref.match(tweet)) {
-                    console.log(log, 'Check if this tweet contain a video')
-                    createXhr()
+                    console.log(log, 'Start tweet operation')
+                    tweetOperation()
                 }
             }
         })
@@ -53,6 +53,41 @@
 
     observer.observe(target, config)
     console.log(log, 'Observe URL Changes')
+    
+    function tweetOperation() {
+        try {
+            article = document.getElementsByTagName('article')[0]
+            let times = 0
+            
+            if (article) {
+                checkEmbeddedVideo()
+            } else {
+                console.log(log, 'Waiting for the tweet to load ')
+                setTimeout(tweetOperation, 500)
+            }
+            
+            function checkEmbeddedVideo() {
+                console.log(log, 'Check if this tweet contain a video')
+                embeddedVideo = article.getElementsByClassName('css-1dbjc4n r-1awozwy r-1p0dtai r-1777fci r-1d2f490 r-u8s1d r-zchlnj r-ipm5af')[0]
+                times++
+                
+                if (embeddedVideo) {
+                    videoContainer = embeddedVideo.parentNode
+                    embeddedVideo.remove()
+                    console.log(log, 'Remove embedded video')					
+                    createXhr()
+                } else if (times < 5){
+                    setTimeout(checkEmbeddedVideo, 500)
+                } else if (times >= 5){
+                    console.log(log, "This tweet doesn't contain any video")
+                    return
+                }	
+            }
+        }
+        catch(e) {
+            console.log(log, e)
+        }
+    }
     
     function createXhr() {
         const url = window.location.href
@@ -80,43 +115,22 @@
                     console.log(log, downloadUrl)
                     
                     if (currentHref.match(tweet)) {
-                        checkEmbeddedVideo()
+                        const videoDiv = document.createElement('div')
+                        videoDiv.setAttribute('class', 'width-inherit')
+                        videoDiv.innerHTML = `
+                            <video controls class="width-inherit">
+                                <source src="${downloadUrl}" type="video/mp4">
+                            </video>
+                        `		
+                        videoContainer.append(videoDiv)
+                        console.log(log, 'Append new Video')
                     }
                 } else {
                     console.log(log, "This tweet doesn't contain any video")
+                    return
                 }
             }
         })
-    }
-    
-    function checkEmbeddedVideo() {
-        try {
-            article = document.getElementsByTagName('article')[0]
-
-            if (article) {
-                const videoDiv = document.createElement('div')
-                
-                embedVideo = article.getElementsByClassName('css-1dbjc4n r-1awozwy r-1p0dtai r-1777fci r-1d2f490 r-u8s1d r-zchlnj r-ipm5af')[0]
-                videoContainer = embedVideo.parentNode
-                embedVideo.remove()
-                console.log(log, 'Remove embedded video')
-
-                videoDiv.setAttribute('class', 'width-inherit')
-                videoDiv.innerHTML = `
-                    <video controls class="width-inherit">
-                        <source src="${downloadUrl}" type="video/mp4">
-                    </video>
-                `		
-                videoContainer.append(videoDiv)
-                console.log(log, 'Append new Video')
-            } else {
-                console.log(log, 'Check embedded video')
-                setTimeout(checkEmbeddedVideo, 500)
-            }
-        }
-        catch(e) {
-            console.log(log, e)
-        }
     }
     
 })()
