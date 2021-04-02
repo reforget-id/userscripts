@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Twitter Video Fix 
-// @version     1.1.1
+// @version     1.1.2
 // @author      reforget-id
 // @namespace   twitter-video-fix
 // @description Fix video playback in twitter
@@ -117,9 +117,9 @@
                     
                     if (currentHref.match(tweet)) {
                         const videoDiv = document.createElement('div')
-                        videoDiv.setAttribute('class', size-inherit')
+                        videoDiv.setAttribute('class', 'size-inherit')
                         videoDiv.innerHTML = `
-                            <video controls class="size-inherit">
+                            <video controls autoplay class="size-inherit">
                                 <source src="${downloadUrl}" type="video/mp4">
                             </video>
                         `		
